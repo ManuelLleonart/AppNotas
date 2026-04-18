@@ -1,6 +1,6 @@
 {
-  "name": "App---Notas",
-  "short_name": "App---Notas",
+  "name": "AppNotas",
+  "short_name": "AppNotas",
   "description": "Tareas ciclicas de limpieza por zonas de la casa.",
   "lang": "es-ES",
   "start_url": "/",

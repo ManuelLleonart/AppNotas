@@ -219,7 +219,7 @@ export default function App() {
       <main className="app-frame">
         <header className="topbar">
           <div>
-            <p className="eyebrow">App---Notas</p>
+            <p className="eyebrow">AppNotas</p>
             <h1>Limpieza por zonas</h1>
             <p className="subtitle">
               Organiza tareas ciclicas, tachalas rapido y deja que se reinicien solas al completar la zona.

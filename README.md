@@ -1,4 +1,4 @@
-# App---Notas
+# AppNotas
 
 App instalable para movil hecha con React y Vite. Organiza tareas ciclicas por zonas de la casa y funciona tambien sin conexion.
 
