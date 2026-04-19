@@ -87,36 +87,16 @@ button {
   gap: 18px;
 }
 
-.topbar,
-.panel,
-.hero-banner {
+.panel {
   backdrop-filter: blur(18px);
   background: var(--panel);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
 
-.topbar,
 .panel {
   border-radius: 28px;
   padding: 22px;
-}
-
-.hero-banner {
-  border-radius: 30px;
-  padding: 24px;
-  display: grid;
-  gap: 18px;
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.95), rgba(17, 94, 89, 0.92)),
-    var(--panel-strong);
-  color: #f8fafc;
-}
-
-.hero-banner.success {
-  background:
-    linear-gradient(135deg, rgba(22, 101, 52, 0.96), rgba(21, 128, 61, 0.94)),
-    var(--panel-strong);
 }
 
 .eyebrow {
@@ -151,44 +131,11 @@ h3 {
   font-size: 1rem;
 }
 
-.subtitle,
-.install-hint,
 .counter-text,
 .empty-state p,
-.hero-banner p,
 .done-banner {
   color: inherit;
   opacity: 0.9;
-}
-
-.topbar {
-  display: grid;
-  gap: 16px;
-}
-
-.status-pill {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: rgba(15, 118, 110, 0.09);
-  color: var(--teal);
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #14b8a6;
-  box-shadow: 0 0 0 6px rgba(20, 184, 166, 0.12);
-}
-
-.install-button {
-  justify-self: start;
 }
 
 .panel {
@@ -255,6 +202,10 @@ h3 {
 .composer {
   display: grid;
   gap: 10px;
+}
+
+.category-composer {
+  margin-bottom: 4px;
 }
 
 .composer input {
@@ -385,6 +336,41 @@ h3 {
   transform: translateY(-1px);
 }
 
+.category-editor-list {
+  display: grid;
+  gap: 10px;
+}
+
+.category-editor-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.category-editor-card input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  outline: none;
+}
+
+.category-editor-card input:focus {
+  border-color: rgba(15, 118, 110, 0.4);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.14);
+}
+
+.ghost-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
 .zone-chip:active,
 .primary-button:active,
 .secondary-button:active,
@@ -395,11 +381,6 @@ h3 {
 @media (min-width: 640px) {
   .app-shell {
     padding: 32px 20px 40px;
-  }
-
-  .hero-banner {
-    grid-template-columns: 1fr auto;
-    align-items: center;
   }
 
   .zone-grid {
@@ -415,6 +396,11 @@ h3 {
   }
 
   .task-card {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .category-editor-card {
     grid-template-columns: 1fr auto;
     align-items: center;
   }

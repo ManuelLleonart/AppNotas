@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-const ZONES = [
+const DEFAULT_CATEGORIES = [
   { key: "bano", label: "Ba\u00f1o" },
   { key: "comedor", label: "Comedor" },
   { key: "habitacion", label: "Habitaci\u00f3n" },
@@ -9,136 +9,127 @@ const ZONES = [
   { key: "general", label: "General" }
 ];
 
-const STORAGE_KEY = "weekly-cyclic-tasks-v2";
-
-function createEmptyZones() {
-  return ZONES.reduce((accumulator, zone) => {
-    accumulator[zone.key] = [];
-    return accumulator;
-  }, {});
-}
-
-function normalizeStoredTasks(value) {
-  const fallback = createEmptyZones();
-
-  if (!value || typeof value !== "object") {
-    return fallback;
-  }
-
-  return ZONES.reduce((accumulator, zone) => {
-    accumulator[zone.key] = Array.isArray(value[zone.key]) ? value[zone.key] : [];
-    return accumulator;
-  }, {});
-}
+const TASKS_STORAGE_KEY = "weekly-cyclic-tasks-v3";
+const CATEGORIES_STORAGE_KEY = "weekly-cyclic-categories-v1";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function InstallBanner({ deferredPrompt, onInstall, isStandalone }) {
-  if (isStandalone) {
-    return (
-      <section className="hero-banner success">
-        <div>
-          <p className="eyebrow">Instalada</p>
-          <h2>La app ya funciona como acceso directo</h2>
-          <p>
-            Puedes abrirla desde la pantalla de inicio y usarla tambien sin conexion.
-          </p>
-        </div>
-      </section>
-    );
+function buildEmptyTasks(categories) {
+  return categories.reduce((accumulator, category) => {
+    accumulator[category.key] = [];
+    return accumulator;
+  }, {});
+}
+
+function normalizeCategories(value) {
+  if (!Array.isArray(value) || value.length === 0) {
+    return DEFAULT_CATEGORIES;
   }
 
-  return (
-    <section className="hero-banner">
-      <div>
-        <p className="eyebrow">Version movil</p>
-        <h2>Instalala en tu telefono y usala como una app real</h2>
-        <p>
-          Guarda tus tareas en el movil, abre rapido desde el inicio y sigue usando la lista aunque no tengas red.
-        </p>
-      </div>
-      {deferredPrompt ? (
-        <button className="primary-button install-button" onClick={onInstall}>
-          Instalar app
-        </button>
-      ) : (
-        <p className="install-hint">
-          Si no ves el boton, abre esta web en Chrome o Safari y usa "Anadir a pantalla de inicio".
-        </p>
-      )}
-    </section>
-  );
+  const seen = new Set();
+  const normalized = value
+    .map((category) => {
+      if (!category || typeof category !== "object") {
+        return null;
+      }
+
+      const key = typeof category.key === "string" && category.key.trim() ? category.key.trim() : uid();
+      const label =
+        typeof category.label === "string" && category.label.trim()
+          ? category.label.trim()
+          : "Sin nombre";
+
+      if (seen.has(key)) {
+        return null;
+      }
+
+      seen.add(key);
+      return { key, label };
+    })
+    .filter(Boolean);
+
+  return normalized.length > 0 ? normalized : DEFAULT_CATEGORIES;
+}
+
+function normalizeTasks(value, categories) {
+  const fallback = buildEmptyTasks(categories);
+
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+
+  return categories.reduce((accumulator, category) => {
+    accumulator[category.key] = Array.isArray(value[category.key]) ? value[category.key] : [];
+    return accumulator;
+  }, {});
 }
 
 export default function App() {
-  const [selectedZone, setSelectedZone] = useState(ZONES[0].key);
-  const [text, setText] = useState("");
-  const [tasksByZone, setTasksByZone] = useState(() => {
+  const [categories, setCategories] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return normalizeStoredTasks(saved ? JSON.parse(saved) : null);
+      const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      return normalizeCategories(saved ? JSON.parse(saved) : null);
     } catch {
-      return createEmptyZones();
+      return DEFAULT_CATEGORIES;
     }
   });
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(() => DEFAULT_CATEGORIES[0].key);
+  const [taskText, setTaskText] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [tasksByCategory, setTasksByCategory] = useState(() => {
+    try {
+      const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      const activeCategories = normalizeCategories(savedCategories ? JSON.parse(savedCategories) : null);
+      const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+      return normalizeTasks(savedTasks ? JSON.parse(savedTasks) : null, activeCategories);
+    } catch {
+      return buildEmptyTasks(DEFAULT_CATEGORIES);
+    }
+  });
 
-  const currentZone = ZONES.find((zone) => zone.key === selectedZone) || ZONES[0];
-  const tasks = tasksByZone[selectedZone] || [];
+  const currentCategory =
+    categories.find((category) => category.key === selectedCategory) || categories[0] || null;
+  const tasks = currentCategory ? tasksByCategory[currentCategory.key] || [] : [];
   const completedCount = tasks.filter((task) => task.done).length;
   const allCompleted = tasks.length > 0 && completedCount === tasks.length;
   const progress = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasksByZone));
-  }, [tasksByZone]);
+    localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+  }, [categories]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(display-mode: standalone)");
-    const syncStandalone = () => {
-      setIsStandalone(mediaQuery.matches || window.navigator.standalone === true);
-    };
-
-    syncStandalone();
-    mediaQuery.addEventListener("change", syncStandalone);
-
-    return () => {
-      mediaQuery.removeEventListener("change", syncStandalone);
-    };
-  }, []);
+    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasksByCategory));
+  }, [tasksByCategory]);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
-    };
+    setTasksByCategory((previous) => {
+      const next = normalizeTasks(previous, categories);
+      const previousKeys = Object.keys(previous || {});
+      const nextKeys = Object.keys(next);
+      const sameShape =
+        previousKeys.length === nextKeys.length &&
+        nextKeys.every((key) => previous[key] === next[key]);
 
-    const handleAppInstalled = () => {
-      setDeferredPrompt(null);
-      setIsStandalone(true);
-    };
+      return sameShape ? previous : next;
+    });
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
-  }, []);
+    if (!currentCategory && categories[0]) {
+      setSelectedCategory(categories[0].key);
+    }
+  }, [categories, currentCategory]);
 
   useEffect(() => {
-    if (!allCompleted) {
+    if (!allCompleted || !currentCategory) {
       return undefined;
     }
 
     const timer = window.setTimeout(() => {
-      setTasksByZone((previous) => ({
+      setTasksByCategory((previous) => ({
         ...previous,
-        [selectedZone]: previous[selectedZone].map((task) => ({
+        [currentCategory.key]: previous[currentCategory.key].map((task) => ({
           ...task,
           done: false
         }))
@@ -146,70 +137,140 @@ export default function App() {
     }, 1200);
 
     return () => window.clearTimeout(timer);
-  }, [allCompleted, selectedZone]);
+  }, [allCompleted, currentCategory]);
 
   const addTask = () => {
-    const trimmed = text.trim();
-    if (!trimmed) {
+    const trimmed = taskText.trim();
+    if (!trimmed || !currentCategory) {
       return;
     }
 
-    setTasksByZone((previous) => ({
+    setTasksByCategory((previous) => ({
       ...previous,
-      [selectedZone]: [
-        ...previous[selectedZone],
-        {
-          id: uid(),
-          label: trimmed,
-          done: false
-        }
+      [currentCategory.key]: [
+        ...previous[currentCategory.key],
+        { id: uid(), label: trimmed, done: false }
       ]
     }));
-    setText("");
+    setTaskText("");
   };
 
   const toggleTask = (id) => {
-    setTasksByZone((previous) => ({
+    if (!currentCategory) {
+      return;
+    }
+
+    setTasksByCategory((previous) => ({
       ...previous,
-      [selectedZone]: previous[selectedZone].map((task) =>
+      [currentCategory.key]: previous[currentCategory.key].map((task) =>
         task.id === id ? { ...task, done: !task.done } : task
       )
     }));
   };
 
   const deleteTask = (id) => {
-    setTasksByZone((previous) => ({
+    if (!currentCategory) {
+      return;
+    }
+
+    setTasksByCategory((previous) => ({
       ...previous,
-      [selectedZone]: previous[selectedZone].filter((task) => task.id !== id)
+      [currentCategory.key]: previous[currentCategory.key].filter((task) => task.id !== id)
     }));
   };
 
-  const resetZone = () => {
-    setTasksByZone((previous) => ({
+  const resetCategory = () => {
+    if (!currentCategory) {
+      return;
+    }
+
+    setTasksByCategory((previous) => ({
       ...previous,
-      [selectedZone]: previous[selectedZone].map((task) => ({
+      [currentCategory.key]: previous[currentCategory.key].map((task) => ({
         ...task,
         done: false
       }))
     }));
   };
 
-  const clearZone = () => {
-    setTasksByZone((previous) => ({
-      ...previous,
-      [selectedZone]: []
-    }));
-  };
-
-  const installApp = async () => {
-    if (!deferredPrompt) {
+  const clearCategory = () => {
+    if (!currentCategory) {
       return;
     }
 
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
+    setTasksByCategory((previous) => ({
+      ...previous,
+      [currentCategory.key]: []
+    }));
   };
+
+  const addCategory = () => {
+    const trimmed = newCategory.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const category = { key: uid(), label: trimmed };
+    setCategories((previous) => [...previous, category]);
+    setTasksByCategory((previous) => ({
+      ...previous,
+      [category.key]: []
+    }));
+    setSelectedCategory(category.key);
+    setNewCategory("");
+  };
+
+  const renameCategory = (key, label) => {
+    const trimmed = label.trimStart();
+
+    setCategories((previous) =>
+      previous.map((category) =>
+        category.key === key ? { ...category, label: trimmed || category.label } : category
+      )
+    );
+  };
+
+  const finishRenameCategory = (key, label) => {
+    const trimmed = label.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    setCategories((previous) =>
+      previous.map((category) =>
+        category.key === key ? { ...category, label: trimmed } : category
+      )
+    );
+  };
+
+  const deleteCategory = (key) => {
+    if (categories.length === 1) {
+      return;
+    }
+
+    setCategories((previous) => previous.filter((category) => category.key !== key));
+    setTasksByCategory((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
+
+    if (selectedCategory === key) {
+      const remaining = categories.find((category) => category.key !== key);
+      if (remaining) {
+        setSelectedCategory(remaining.key);
+      }
+    }
+  };
+
+  const categoriesSummary = useMemo(
+    () => `${categories.length} categor${categories.length === 1 ? "ia" : "ias"}`,
+    [categories.length]
+  );
+
+  if (!currentCategory) {
+    return null;
+  }
 
   return (
     <div className="app-shell">
@@ -217,46 +278,59 @@ export default function App() {
       <div className="background-glow background-glow-b" />
 
       <main className="app-frame">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">AppNotas</p>
-            <h1>Limpieza por zonas</h1>
-            <p className="subtitle">
-              Organiza tareas ciclicas, tachalas rapido y deja que se reinicien solas al completar la zona.
-            </p>
-          </div>
-          <div className="status-pill">
-            <span className="status-dot" />
-            Guardado automatico
-          </div>
-        </header>
-
-        <InstallBanner
-          deferredPrompt={deferredPrompt}
-          onInstall={installApp}
-          isStandalone={isStandalone}
-        />
-
         <section className="panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Zonas</p>
-              <h2>Elige donde vas a trabajar</h2>
+              <p className="eyebrow">Categorias</p>
+              <h2>Organiza tu casa a tu manera</h2>
             </div>
-            <p className="counter-text">
-              {completedCount}/{tasks.length || 0} hechas
-            </p>
+            <p className="counter-text">{categoriesSummary}</p>
+          </div>
+
+          <div className="composer category-composer">
+            <input
+              value={newCategory}
+              onChange={(event) => setNewCategory(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  addCategory();
+                }
+              }}
+              placeholder="Nueva categoria"
+            />
+            <button className="primary-button" onClick={addCategory}>
+              Anadir categoria
+            </button>
           </div>
 
           <div className="zone-grid">
-            {ZONES.map((zone) => (
+            {categories.map((category) => (
               <button
-                key={zone.key}
-                className={zone.key === selectedZone ? "zone-chip active" : "zone-chip"}
-                onClick={() => setSelectedZone(zone.key)}
+                key={category.key}
+                className={category.key === selectedCategory ? "zone-chip active" : "zone-chip"}
+                onClick={() => setSelectedCategory(category.key)}
               >
-                {zone.label}
+                {category.label}
               </button>
+            ))}
+          </div>
+
+          <div className="category-editor-list">
+            {categories.map((category) => (
+              <article key={category.key} className="category-editor-card">
+                <input
+                  value={category.label}
+                  onChange={(event) => renameCategory(category.key, event.target.value)}
+                  onBlur={(event) => finishRenameCategory(category.key, event.target.value)}
+                />
+                <button
+                  className="ghost-button"
+                  onClick={() => deleteCategory(category.key)}
+                  disabled={categories.length === 1}
+                >
+                  Borrar
+                </button>
+              </article>
             ))}
           </div>
         </section>
@@ -265,7 +339,7 @@ export default function App() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">Hoy</p>
-              <h2>{currentZone.label}</h2>
+              <h2>{currentCategory.label}</h2>
             </div>
             <div className="progress-ring">
               <strong>{progress}%</strong>
@@ -275,14 +349,14 @@ export default function App() {
 
           <div className="composer">
             <input
-              value={text}
-              onChange={(event) => setText(event.target.value)}
+              value={taskText}
+              onChange={(event) => setTaskText(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   addTask();
                 }
               }}
-              placeholder={`Nueva tarea para ${currentZone.label.toLowerCase()}`}
+              placeholder={`Nueva tarea para ${currentCategory.label.toLowerCase()}`}
             />
             <button className="primary-button" onClick={addTask}>
               Anadir
@@ -298,7 +372,7 @@ export default function App() {
               <article className="empty-state">
                 <h3>No hay tareas todavia</h3>
                 <p>
-                  Crea tu primera tarea para {currentZone.label.toLowerCase()} y la tendras guardada en el movil.
+                  Crea tu primera tarea para {currentCategory.label.toLowerCase()} y la tendras guardada en el movil.
                 </p>
               </article>
             ) : (
@@ -325,17 +399,17 @@ export default function App() {
           </div>
 
           <div className="action-row">
-            <button className="secondary-button" onClick={resetZone}>
+            <button className="secondary-button" onClick={resetCategory}>
               Desmarcar todas
             </button>
-            <button className="secondary-button danger" onClick={clearZone}>
-              Vaciar zona
+            <button className="secondary-button danger" onClick={clearCategory}>
+              Vaciar categoria
             </button>
           </div>
 
           {allCompleted ? (
             <div className="done-banner">
-              Todo listo en {currentZone.label.toLowerCase()}. Reiniciando las tareas para la siguiente vuelta.
+              Todo listo en {currentCategory.label.toLowerCase()}. Reiniciando las tareas para la siguiente vuelta.
             </div>
           ) : null}
         </section>
