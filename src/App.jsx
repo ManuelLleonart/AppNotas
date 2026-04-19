@@ -78,6 +78,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState(() => DEFAULT_CATEGORIES[0].key);
   const [taskText, setTaskText] = useState("");
   const [newCategory, setNewCategory] = useState("");
+  const [isCategoryEditorOpen, setIsCategoryEditorOpen] = useState(false);
   const [tasksByCategory, setTasksByCategory] = useState(() => {
     try {
       const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
@@ -315,24 +316,35 @@ export default function App() {
             ))}
           </div>
 
-          <div className="category-editor-list">
-            {categories.map((category) => (
-              <article key={category.key} className="category-editor-card">
-                <input
-                  value={category.label}
-                  onChange={(event) => renameCategory(category.key, event.target.value)}
-                  onBlur={(event) => finishRenameCategory(category.key, event.target.value)}
-                />
-                <button
-                  className="ghost-button"
-                  onClick={() => deleteCategory(category.key)}
-                  disabled={categories.length === 1}
-                >
-                  Borrar
-                </button>
-              </article>
-            ))}
+          <div className="category-editor-toggle-row">
+            <button
+              className="secondary-button category-toggle-button"
+              onClick={() => setIsCategoryEditorOpen((previous) => !previous)}
+            >
+              {isCategoryEditorOpen ? "Ocultar edicion de categorias" : "Editar y borrar categorias"}
+            </button>
           </div>
+
+          {isCategoryEditorOpen ? (
+            <div className="category-editor-list">
+              {categories.map((category) => (
+                <article key={category.key} className="category-editor-card">
+                  <input
+                    value={category.label}
+                    onChange={(event) => renameCategory(category.key, event.target.value)}
+                    onBlur={(event) => finishRenameCategory(category.key, event.target.value)}
+                  />
+                  <button
+                    className="ghost-button"
+                    onClick={() => deleteCategory(category.key)}
+                    disabled={categories.length === 1}
+                  >
+                    Borrar
+                  </button>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="panel">

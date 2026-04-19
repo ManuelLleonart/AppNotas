@@ -341,6 +341,16 @@ h3 {
   gap: 10px;
 }
 
+.category-editor-toggle-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.category-toggle-button {
+  min-height: 46px;
+  padding: 10px 16px;
+}
+
 .category-editor-card {
   display: grid;
   gap: 10px;
