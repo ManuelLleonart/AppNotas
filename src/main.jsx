@@ -1,7 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { bootstrapPersistentStorage } from "./storage";
 import "./styles.css";
+
+bootstrapPersistentStorage();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

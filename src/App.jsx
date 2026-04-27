@@ -1,16 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-
-const DEFAULT_CATEGORIES = [
-  { key: "bano", label: "Ba\u00f1o" },
-  { key: "comedor", label: "Comedor" },
-  { key: "habitacion", label: "Habitaci\u00f3n" },
-  { key: "vestidor", label: "Vestidor" },
-  { key: "terraza", label: "Terraza" },
-  { key: "general", label: "General" }
-];
-
-const TASKS_STORAGE_KEY = "weekly-cyclic-tasks-v3";
-const CATEGORIES_STORAGE_KEY = "weekly-cyclic-categories-v1";
+import {
+  CATEGORIES_STORAGE_KEY,
+  DEFAULT_CATEGORIES,
+  STORAGE_META_KEY,
+  TASKS_STORAGE_KEY
+} from "./storage";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -103,7 +97,13 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasksByCategory));
-  }, [tasksByCategory]);
+    localStorage.setItem(
+      STORAGE_META_KEY,
+      JSON.stringify({
+        updatedAt: Date.now()
+      })
+    );
+  }, [categories, tasksByCategory]);
 
   useEffect(() => {
     setTasksByCategory((previous) => {
