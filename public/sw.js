@@ -1,4 +1,4 @@
-const CACHE_NAME = "casa-lista-v2";
+const CACHE_NAME = "casa-lista-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -30,6 +30,27 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+  const isAppShellRequest =
+    event.request.mode === "navigate" ||
+    requestUrl.pathname === "/" ||
+    requestUrl.pathname === "/index.html";
+
+  if (isAppShellRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put("/index.html", responseClone);
+          });
+          return networkResponse;
+        })
+        .catch(() => caches.match("/index.html"))
+    );
     return;
   }
 
