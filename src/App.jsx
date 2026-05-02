@@ -119,6 +119,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState(() => DEFAULT_CATEGORIES[0].key);
   const [taskText, setTaskText] = useState("");
   const [newCategory, setNewCategory] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
   const [isCategoryEditorOpen, setIsCategoryEditorOpen] = useState(false);
   const [tasksByCategory, setTasksByCategory] = useState(() => {
     try {
@@ -325,6 +326,15 @@ export default function App() {
     setTheme((previous) => (previous === "dark" ? "light" : "dark"));
   };
 
+  const toggleEditMode = () => {
+    setIsEditMode((previous) => {
+      if (previous) {
+        setIsCategoryEditorOpen(false);
+      }
+      return !previous;
+    });
+  };
+
   if (!currentCategory) {
     return null;
   }
@@ -341,14 +351,24 @@ export default function App() {
               <p className="eyebrow">Limpia tu casa</p>
               <h1>Rutina de limpieza</h1>
             </div>
-            <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
-              title={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
-            >
-              <span aria-hidden="true">{theme === "dark" ? "\u2600" : "\u263E"}</span>
-            </button>
+            <div className="topbar-actions">
+              <button
+                className={isEditMode ? "edit-toggle active" : "edit-toggle"}
+                onClick={toggleEditMode}
+                aria-label={isEditMode ? "Cerrar modo edicion" : "Abrir modo edicion"}
+                title={isEditMode ? "Cerrar modo edicion" : "Abrir modo edicion"}
+              >
+                <span aria-hidden="true">✎</span>
+              </button>
+              <button
+                className="theme-toggle"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+                title={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+              >
+                <span aria-hidden="true">{theme === "dark" ? "\u2600" : "\u263E"}</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -361,21 +381,23 @@ export default function App() {
             <p className="counter-text">{categoriesSummary}</p>
           </div>
 
-          <div className="composer category-composer">
-            <input
-              value={newCategory}
-              onChange={(event) => setNewCategory(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  addCategory();
-                }
-              }}
-              placeholder="Nueva categoria"
-            />
-            <button className="primary-button" onClick={addCategory}>
-              Anadir categoria
-            </button>
-          </div>
+          {isEditMode ? (
+            <div className="composer category-composer">
+              <input
+                value={newCategory}
+                onChange={(event) => setNewCategory(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    addCategory();
+                  }
+                }}
+                placeholder="Nueva categoria"
+              />
+              <button className="primary-button" onClick={addCategory}>
+                Anadir categoria
+              </button>
+            </div>
+          ) : null}
 
           <div className="zone-grid">
             {categories.map((category) => (
@@ -389,16 +411,18 @@ export default function App() {
             ))}
           </div>
 
-          <div className="category-editor-toggle-row">
-            <button
-              className="secondary-button category-toggle-button"
-              onClick={() => setIsCategoryEditorOpen((previous) => !previous)}
-            >
-              {isCategoryEditorOpen ? "Ocultar edicion de categorias" : "Editar y borrar categorias"}
-            </button>
-          </div>
+          {isEditMode ? (
+            <div className="category-editor-toggle-row">
+              <button
+                className="secondary-button category-toggle-button"
+                onClick={() => setIsCategoryEditorOpen((previous) => !previous)}
+              >
+                {isCategoryEditorOpen ? "Ocultar edicion de categorias" : "Editar categorias"}
+              </button>
+            </div>
+          ) : null}
 
-          {isCategoryEditorOpen ? (
+          {isEditMode && isCategoryEditorOpen ? (
             <div className="category-editor-list">
               {categories.map((category) => (
                 <article key={category.key} className="category-editor-card">
@@ -408,11 +432,12 @@ export default function App() {
                     onBlur={(event) => finishRenameCategory(category.key, event.target.value)}
                   />
                   <button
-                    className="ghost-button"
+                    className="icon-button"
                     onClick={() => deleteCategory(category.key)}
+                    aria-label={`Eliminar ${category.label}`}
                     disabled={categories.length === 1}
                   >
-                    Borrar
+                    ×
                   </button>
                 </article>
               ))}
@@ -432,21 +457,23 @@ export default function App() {
             </div>
           </div>
 
-          <div className="composer">
-            <input
-              value={taskText}
-              onChange={(event) => setTaskText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  addTask();
-                }
-              }}
-              placeholder={`Nueva tarea para ${currentCategory.label.toLowerCase()}`}
-            />
-            <button className="primary-button" onClick={addTask}>
-              Anadir
-            </button>
-          </div>
+          {isEditMode ? (
+            <div className="composer">
+              <input
+                value={taskText}
+                onChange={(event) => setTaskText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    addTask();
+                  }
+                }}
+                placeholder={`Nueva tarea para ${currentCategory.label.toLowerCase()}`}
+              />
+              <button className="primary-button" onClick={addTask}>
+                Anadir tarea
+              </button>
+            </div>
+          ) : null}
 
           <div className="progress-bar" aria-hidden="true">
             <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
@@ -472,11 +499,11 @@ export default function App() {
                     <span>{task.label}</span>
                   </label>
                   <button
-                    className="ghost-button"
+                    className="icon-button"
                     onClick={() => deleteTask(task.id)}
                     aria-label={`Eliminar ${task.label}`}
                   >
-                    Borrar
+                    ×
                   </button>
                 </article>
               ))

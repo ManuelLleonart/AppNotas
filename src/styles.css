@@ -123,6 +123,12 @@ button {
   gap: 16px;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .panel {
   backdrop-filter: blur(18px);
   background: var(--panel);
@@ -212,7 +218,10 @@ h3 {
 .zone-chip,
 .primary-button,
 .secondary-button,
-.ghost-button {
+.ghost-button,
+.theme-toggle,
+.edit-toggle,
+.icon-button {
   border-radius: 18px;
   transition:
     transform 160ms ease,
@@ -318,6 +327,8 @@ h3 {
 
 .task-card {
   display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 12px;
   padding: 16px;
   background: var(--surface-strong);
@@ -333,6 +344,11 @@ h3 {
   gap: 14px;
   color: var(--text);
   font-weight: 600;
+  min-width: 0;
+}
+
+.task-main span {
+  word-break: break-word;
 }
 
 .task-main input {
@@ -351,6 +367,23 @@ h3 {
   min-height: 42px;
   padding: 10px 14px;
   background: rgba(185, 28, 28, 0.08);
+}
+
+.icon-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  border-radius: 12px;
+  background: rgba(185, 28, 28, 0.08);
+  color: var(--danger);
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 500;
 }
 
 .empty-state {
@@ -395,6 +428,8 @@ h3 {
 
 .category-editor-card {
   display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 10px;
   padding: 12px;
   border-radius: 22px;
@@ -453,11 +488,48 @@ h3 {
   transform: translateY(1px);
 }
 
+.edit-toggle {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.edit-toggle.active {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: #f8fafc;
+  box-shadow: 0 16px 28px rgba(15, 118, 110, 0.24);
+}
+
+.edit-toggle span {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .zone-chip:active,
 .primary-button:active,
 .secondary-button:active,
-.ghost-button:active {
+.ghost-button:active,
+.edit-toggle:active,
+.icon-button:active {
   transform: translateY(1px);
+}
+
+.edit-toggle:hover,
+.icon-button:hover {
+  transform: translateY(-1px);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
 }
 
 @media (min-width: 640px) {
@@ -475,16 +547,6 @@ h3 {
 
   .action-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .task-card {
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
-
-  .category-editor-card {
-    grid-template-columns: 1fr auto;
-    align-items: center;
   }
 
   .ghost-button {
