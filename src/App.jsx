@@ -3,11 +3,46 @@ import {
   CATEGORIES_STORAGE_KEY,
   DEFAULT_CATEGORIES,
   STORAGE_META_KEY,
-  TASKS_STORAGE_KEY
+  TASKS_STORAGE_KEY,
+  THEME_STORAGE_KEY
 } from "./storage";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
+}
+
+const DEFAULT_TASK_LABELS = {
+  general: ["Limpiar el polvo", "Pasar el aspirador"],
+  bano: [
+    "Limpiar los cristales",
+    "Limpiar el vater",
+    "Limpiar la ducha",
+    "Limpiar el lavabo",
+    "Limpiar los metales",
+    "Vaciar papelera",
+    "Aspirar detras del vater"
+  ],
+  comedor: ["Limpiar ventanales", "Aspirar sofa", "Limpiar sillas"],
+  habitacion: [
+    "Hacer la cama",
+    "Mover las mesitas",
+    "Aspirar la cama",
+    "Limpiar la ventana"
+  ],
+  terraza: ["Aspirar el suelo", "Pasar el mocho"],
+  vestidor: []
+};
+
+function createDefaultTasks(categories) {
+  return categories.reduce((accumulator, category) => {
+    const labels = DEFAULT_TASK_LABELS[category.key] || [];
+    accumulator[category.key] = labels.map((label, index) => ({
+      id: `${category.key}-${index + 1}`,
+      label,
+      done: false
+    }));
+    return accumulator;
+  }, {});
 }
 
 function buildEmptyTasks(categories) {
@@ -48,7 +83,7 @@ function normalizeCategories(value) {
 }
 
 function normalizeTasks(value, categories) {
-  const fallback = buildEmptyTasks(categories);
+  const fallback = createDefaultTasks(categories);
 
   if (!value || typeof value !== "object") {
     return fallback;
@@ -61,6 +96,18 @@ function normalizeTasks(value, categories) {
 }
 
 export default function App() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      if (savedTheme === "dark" || savedTheme === "light") {
+        return savedTheme;
+      }
+    } catch {
+      return "light";
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
   const [categories, setCategories] = useState(() => {
     try {
       const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY);
@@ -80,7 +127,7 @@ export default function App() {
       const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
       return normalizeTasks(savedTasks ? JSON.parse(savedTasks) : null, activeCategories);
     } catch {
-      return buildEmptyTasks(DEFAULT_CATEGORIES);
+      return createDefaultTasks(DEFAULT_CATEGORIES);
     }
   });
 
@@ -94,6 +141,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
   }, [categories]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasksByCategory));
@@ -269,6 +321,10 @@ export default function App() {
     [categories.length]
   );
 
+  const toggleTheme = () => {
+    setTheme((previous) => (previous === "dark" ? "light" : "dark"));
+  };
+
   if (!currentCategory) {
     return null;
   }
@@ -279,6 +335,23 @@ export default function App() {
       <div className="background-glow background-glow-b" />
 
       <main className="app-frame">
+        <section className="panel top-panel">
+          <div className="topbar">
+            <div>
+              <p className="eyebrow">Limpia tu casa</p>
+              <h1>Rutina de limpieza</h1>
+            </div>
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+              title={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+            >
+              <span aria-hidden="true">{theme === "dark" ? "\u2600" : "\u263E"}</span>
+            </button>
+          </div>
+        </section>
+
         <section className="panel">
           <div className="section-heading">
             <div>

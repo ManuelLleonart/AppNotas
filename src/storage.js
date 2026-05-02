@@ -10,6 +10,7 @@ export const DEFAULT_CATEGORIES = [
 export const TASKS_STORAGE_KEY = "weekly-cyclic-tasks-v3";
 export const CATEGORIES_STORAGE_KEY = "weekly-cyclic-categories-v1";
 export const STORAGE_META_KEY = "weekly-cyclic-meta-v1";
+export const THEME_STORAGE_KEY = "weekly-cyclic-theme-v1";
 
 const MIGRATION_PARAM = "appnotas-migrate";
 const STORAGE_KEYS = [CATEGORIES_STORAGE_KEY, TASKS_STORAGE_KEY, STORAGE_META_KEY];
